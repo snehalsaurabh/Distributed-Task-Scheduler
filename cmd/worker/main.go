@@ -17,8 +17,8 @@ func main() {
 
 	coordinatorAddress := os.Getenv("COORDINATOR_ADDRESS")
 	if coordinatorAddress == "" {
-		// coordinatorAddress = "coordinator:8081" // default value for local testing
-		coordinatorAddress = "localhost:8081" // default value for local testing
+		coordinatorAddress = "coordinator:8081" // default value for local testing
+		// coordinatorAddress = "localhost:8081" // default value for local testing
 
 	}
 

@@ -156,7 +156,7 @@ func (w *WorkerService) sendPulse() error {
 	workerAddress := os.Getenv("WORKER_ADDRESS")
 	if workerAddress == "" {
 		// If not set, use localhost with the dynamically assigned port
-		workerAddress = fmt.Sprintf("localhost:%s", w.serverPort)
+		workerAddress = fmt.Sprintf("worker:%s", w.serverPort)
 		// workerAddress = fmt.Sprintf("localhost:%s", w.serverPort)
 	}
 

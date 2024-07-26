@@ -1,0 +1,21 @@
+FROM golang:alpine
+
+WORKDIR /app
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+
+RUN echo '#!/bin/sh' > /wait-for-migrations.sh && \
+    echo 'while [ ! -f /app/migrations_complete ]; do' >> /wait-for-migrations.sh && \
+    echo '  echo "Waiting for migrations to complete..."' >> /wait-for-migrations.sh && \
+    echo '  sleep 2' >> /wait-for-migrations.sh && \
+    echo 'done' >> /wait-for-migrations.sh && \
+    echo 'echo "Migrations completed, starting coordinator"' >> /wait-for-migrations.sh && \
+    echo 'exec "$@"' >> /wait-for-migrations.sh && \
+    chmod +x /wait-for-migrations.sh
+
+EXPOSE 8081
+
+CMD ["/wait-for-migrations.sh", "sh", "-c", "echo 'Starting coordinator' && go run github.com/steebchen/prisma-client-go migrate deploy --preview-feature && go run cmd/coordinator/main.go"]

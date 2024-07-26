@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres
+    restart: always
+    container_name: postgres
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=admin
+    networks:
+      - backend
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - ./volume:/var/lib/postgresql/data
+
+  schedular:
+    build:
+      context: .
+      dockerfile: Dockerfile.schedular
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - backend
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: postgresql://postgres:admin@postgres:5432/postgres
+    volumes:
+      - migration-status:/app
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /app/migrations_complete"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  coordinator:
+    build:
+      context: .
+      dockerfile: Dockerfile.coordinator
+    depends_on:
+      schedular:
+        condition: service_healthy
+    networks:
+      - backend
+    ports:
+      - "8081:8081"
+    environment:
+      DATABASE_URL: postgresql://postgres:admin@postgres:5432/postgres
+    volumes:
+      - migration-status:/app
+    restart: always
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    depends_on:
+      - coordinator
+    networks:
+      - backend
+    environment:
+      COORDINATOR_ADDRESS: coordinator:8081
+    restart: always
+
+volumes:
+  postgres_data:
+  migration-status:
+
+networks:
+  backend:
+    driver: bridge

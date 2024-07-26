@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+option go_package = "/psm";
+
+package dts;
+
+message ScheduleTaskRequest {
+  string scheduled_at = 1;
+  string command = 2;
+}
+
+message ScheduleTaskResponse {
+  string task_id = 1;
+  int64 scheduled_at = 2;
+  string command = 3;
+}
+
+message GetStatusRequest {
+  string task_id = 1;
+}
+
+message GetStatusResponse {
+  string task_id = 1;
+  string command = 2;
+  string scheduled_at = 3;
+  string picked_at = 4;
+  string started_at = 5;
+  string completed_at = 6;
+  string failed_at = 7;
+}
+
+service ClientService {
+  rpc ScheduleTask (ScheduleTaskRequest) returns (ScheduleTaskResponse) {}
+  rpc GetStatus (GetStatusRequest) returns (GetStatusResponse) {}
+}

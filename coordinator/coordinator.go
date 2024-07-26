@@ -113,6 +113,8 @@ func (c *CoordinatorService) SendPulse(ctx context.Context, pulse *psm.SendPulse
 	} else {
 		log.Print("Worker with id: ", workerId, " is not in the worker pool")
 
+		log.Printf("Pulse Address : %v", pulse.GetAddress())
+
 		connection, err := grpc.Dial(pulse.GetAddress(), grpc.WithTransportCredentials(insecure.NewCredentials()))
 
 		if err != nil {
@@ -171,6 +173,7 @@ func (c *CoordinatorService) scanDatabaseForTasks() {
 	for _, task := range tasks {
 		// log.Print("Task found: ", task.ID)
 		formattedTask := &psm.SubmitTaskRequest{TaskId: task.ID, Data: task.Command}
+		// log.Printf("Formatted Task : %v", formattedTask)
 		if err := c.submitTaskToWorker(ctx, formattedTask); err != nil {
 			log.Print("Failed to submit task: ", err)
 			continue

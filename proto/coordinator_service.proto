@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+option go_package = "/psm";
+
+package dts;
+
+enum TaskStatus {
+    QUEUED = 0;
+    STARTED = 1;
+    COMPLETED = 2;
+    FAILED = 3;
+}
+
+message SubmitTaskRequest {
+    string task_id = 1;
+    string data = 2;
+}
+
+message SubmitTaskResponse {
+    string task_id = 1;
+    string message = 2;
+    bool success = 3;
+}
+
+service WorkerService {
+    rpc SubmitTask (SubmitTaskRequest) returns (SubmitTaskResponse) {}
+}
+
+message SendPulseRequest {
+    uint64 worker_id = 1;
+    string address = 2;
+}
+
+message SendPulseResponse {
+    bool Affirmed = 1;
+}
+
+message UpdateTaskStatusRequest {
+    string task_id = 1;
+    TaskStatus status = 2;
+    int64 started_at = 3;
+    int64 completed_at = 4;
+    int64 failed_at = 5;
+}
+
+message UpdateTaskStatusResponse {
+    bool success = 1;
+ }
+
+service CoordinatorService {
+    rpc SendPulse (SendPulseRequest) returns (SendPulseResponse) {}
+    rpc UpdateTaskStatus (UpdateTaskStatusRequest) returns (UpdateTaskStatusResponse) {}
+}

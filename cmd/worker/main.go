@@ -14,7 +14,7 @@ import (
 
 func main() {
 
-	time.Sleep(50 * time.Second)
+	time.Sleep(35 * time.Second)
 
 	coordinatorAddress := os.Getenv("COORDINATOR_ADDRESS")
 	if coordinatorAddress == "" {

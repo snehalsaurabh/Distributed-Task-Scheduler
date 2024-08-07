@@ -21,3 +21,8 @@ make server:
 
 # Prune unused Docker resources (networks, volumes, images not associated with any container)
 # sudo docker system prune --all --volumes --force
+
+
+# // worker > main.go
+
+# worker.go sendPulse

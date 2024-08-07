@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"sync"
 	"time"
 
@@ -113,7 +114,21 @@ func (w *WorkerService) worker() {
 
 func (w *WorkerService) processTask(task *psm.SubmitTaskRequest) {
 	log.Printf("Worker : %s processing task %s", string(w.id), task.TaskId)
-	time.Sleep(5 * time.Second)
+
+	// Create the command
+	cmd := exec.Command("bash", "-c", task.Data)
+
+	// Direct the command's output to the standard output and error streams
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	// Run the command
+	err := cmd.Run()
+	if err != nil {
+		log.Printf("Worker : %s failed to process task %s with error: %s", string(w.id), task.TaskId, err)
+		return
+	}
+
 	log.Printf("Worker : %s processed task %s", string(w.id), task.TaskId)
 }
 

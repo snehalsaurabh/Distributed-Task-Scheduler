@@ -90,12 +90,12 @@ func (c *CoordinatorService) disconnectInactiveWorkers() {
 			delete(c.WorkerPool, workerId)
 
 			c.WorkerPoolKeysMutex.Lock()
-
 			c.WorkerPoolKeys = make([]uint64, 0, len(c.WorkerPool))
 			for workerId := range c.WorkerPool {
 				c.WorkerPoolKeys = append(c.WorkerPoolKeys, workerId)
 			}
 
+			log.Printf("Worker with id: %d removed from the worker pool", workerId)
 			c.WorkerPoolKeysMutex.Unlock()
 		} else {
 			worker.pulseMisses++
@@ -201,6 +201,9 @@ func (c *CoordinatorService) submitTaskToWorker(ctx context.Context, task *psm.S
 		return err
 	}
 	return nil
+}
+
+func (c *CoordinatorService) PrintWorkerPool() {
 }
 
 func (c *CoordinatorService) getNextWorker() *Worker {

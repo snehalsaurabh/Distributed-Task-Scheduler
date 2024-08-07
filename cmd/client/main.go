@@ -25,11 +25,11 @@ func main() {
 
 	fmt.Println("laptopClient", laptopClient)
 	// GetStatus(laptopClient)
-	CreateTask(laptopClient)
-	CreateTask(laptopClient)
-	CreateTask(laptopClient)
-	CreateTask(laptopClient)
-	CreateTask(laptopClient)
+	CreateTask2(laptopClient)
+	// CreateTask(laptopClient)
+	// CreateTask(laptopClient)
+	// CreateTask(laptopClient)
+	// CreateTask(laptopClient)
 
 }
 
@@ -50,7 +50,22 @@ func GetStatus(laptopClient psm.ClientServiceClient) {
 func CreateTask(laptopClient psm.ClientServiceClient) {
 
 	req := &psm.ScheduleTaskRequest{
-		Command:     "echo 'Hello World'",
+		Command:     "echo Hello World",
+		ScheduledAt: time.Now().Format(time.RFC3339),
+	}
+
+	res, err := laptopClient.ScheduleTask(context.Background(), req)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("Task created\n", res)
+}
+
+func CreateTask2(laptopClient psm.ClientServiceClient) {
+
+	req := &psm.ScheduleTaskRequest{
+		Command:     `for i in {1..5}; do echo "Loop $i"; done`,
 		ScheduledAt: time.Now().Format(time.RFC3339),
 	}
 

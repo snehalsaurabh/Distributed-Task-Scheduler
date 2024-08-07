@@ -7,13 +7,14 @@ import (
 	"log"
 	"net"
 	"os"
+	"time"
 
 	"google.golang.org/grpc"
 )
 
 func main() {
 
-	// time.Sleep(60 * time.Second)
+	time.Sleep(50 * time.Second)
 
 	coordinatorAddress := os.Getenv("COORDINATOR_ADDRESS")
 	if coordinatorAddress == "" {

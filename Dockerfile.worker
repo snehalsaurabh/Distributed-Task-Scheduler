@@ -1,6 +1,6 @@
 FROM golang:alpine
 
-RUN apk add --no-cache bash
+RUN apk add --no-cache bash curl git
 
 WORKDIR /app
 

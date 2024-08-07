@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"regexp"
 	"sync"
 	"time"
 
@@ -115,7 +116,18 @@ func (w *WorkerService) worker() {
 func (w *WorkerService) processTask(task *psm.SubmitTaskRequest) {
 	log.Printf("Worker : %s processing task %s", string(w.id), task.TaskId)
 
-	// Create the command
+	re := regexp.MustCompile(`^\s*curl\b`)
+
+	if re.MatchString(task.Data) {
+		w.executeCurlCommand(task.Data)
+	} else {
+		w.executeBashCommand(task)
+	}
+
+	log.Printf("Worker : %s processed task %s", string(w.id), task.TaskId)
+}
+
+func (w *WorkerService) executeBashCommand(task *psm.SubmitTaskRequest) {
 	cmd := exec.Command("bash", "-c", task.Data)
 
 	// Direct the command's output to the standard output and error streams
@@ -128,8 +140,17 @@ func (w *WorkerService) processTask(task *psm.SubmitTaskRequest) {
 		log.Printf("Worker : %s failed to process task %s with error: %s", string(w.id), task.TaskId, err)
 		return
 	}
+}
 
-	log.Printf("Worker : %s processed task %s", string(w.id), task.TaskId)
+func (w *WorkerService) executeCurlCommand(command string) {
+	cmd := exec.Command("bash", "-c", command)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	err := cmd.Run()
+	if err != nil {
+		log.Printf("Worker : %s failed to execute curl command: %v", string(w.id), err)
+	}
 }
 
 func (w *WorkerService) updateStatus(task *psm.SubmitTaskRequest, status psm.TaskStatus) {

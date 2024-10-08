@@ -5,6 +5,8 @@ import (
 	"dts/psm"
 	"flag"
 	"fmt"
+	"log"
+	"strings"
 	"time"
 
 	"google.golang.org/grpc"
@@ -26,10 +28,11 @@ func main() {
 	fmt.Println("laptopClient", laptopClient)
 	// GetStatus(laptopClient)
 	// CreateTask2(laptopClient)
-	CreateCurlTask(laptopClient)
+	// CreateCurlTask(laptopClient)
 	// CreateTask(laptopClient)
 	// CreateTask(laptopClient)
 	// CreateTask(laptopClient)
+	CreatePythonTask(laptopClient)
 
 }
 
@@ -90,4 +93,62 @@ func CreateCurlTask(laptopClient psm.ClientServiceClient) {
 	}
 
 	fmt.Println("Task created\n", res)
+}
+
+func CreatePythonTask(laptopClient psm.ClientServiceClient) {
+	pythonScript := `
+# Function to reverse a string
+def reverse_string(s):
+    return s[::-1]
+
+# Function to check if a string is a palindrome
+def is_palindrome(s):
+    reversed_s = reverse_string(s)
+    return s == reversed_s
+
+# Generate some random numbers without using libraries
+numbers = [i for i in range(1, 11)]  # Just for illustration
+print(f"Original numbers: {numbers}")
+
+# Sort the numbers
+sorted_numbers = sorted(numbers, reverse=True)
+print(f"Sorted numbers (descending): {sorted_numbers}")
+
+# String manipulation
+test_string = "madam"
+print(f"Original string: {test_string}")
+reversed_string = reverse_string(test_string)
+print(f"Reversed string: {reversed_string}")
+print(f"Is '{test_string}' a palindrome? {'Yes' if is_palindrome(test_string) else 'No'}")
+
+# Perform a simple calculation
+sum_of_numbers = sum(numbers)
+print(f"Sum of numbers: {sum_of_numbers}")
+
+average = sum_of_numbers / len(numbers)
+print(f"Average of numbers: {average}")
+
+# Find max and min
+print(f"Maximum number: {max(numbers)}")
+print(f"Minimum number: {min(numbers)}")
+`
+
+	// Escape only the double quotes in the Python script
+	escapedScript := strings.ReplaceAll(pythonScript, `"`, `\"`)
+
+	// Prepend the Python interpreter command and wrap the script in double quotes
+	command := fmt.Sprintf(`python3 -c "%s"`, escapedScript)
+
+	req := &psm.ScheduleTaskRequest{
+		Command:     command,
+		ScheduledAt: time.Now().Format(time.RFC3339),
+	}
+
+	res, err := laptopClient.ScheduleTask(context.Background(), req)
+	if err != nil {
+		log.Fatalf("Failed to schedule Python task: %v", err)
+	}
+
+	fmt.Printf("Python task scheduled: %+v\n", res)
+	fmt.Printf("Scheduled command: %s\n", command)
 }

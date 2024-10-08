@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
+	"strings"
 	"sync"
 	"time"
 
@@ -108,23 +109,86 @@ func (w *WorkerService) worker() {
 			go w.updateStatus(task, psm.TaskStatus_STARTED)
 			w.processTask(task)
 			go w.updateStatus(task, psm.TaskStatus_COMPLETED)
-
 		}
 	}
 }
+
+// func (w *WorkerService) processTask(task *psm.SubmitTaskRequest) {
+// 	log.Printf("Worker : %s processing task %s", string(w.id), task.TaskId)
+
+// 	re := regexp.MustCompile(`^\s*curl\b`)
+// 	re2 := regexp.MustCompile(`^\s*(git clone|cd|node)\b`)
+// 	rePython := regexp.MustCompile(`^\s*(python|python3)\b`)
+
+// 	if re.MatchString(task.Data) {
+// 		w.executeCurlCommand(task.Data)
+// 	} else if re2.MatchString(task.Data) {
+// 		w.runNodeServer(task.Data)
+// 	} else if rePython.MatchString(task.Data) {
+
+// 	} else {
+// 		w.executeBashCommand(task)
+// 	}
+// 	log.Printf("Worker : %s processed task %s", string(w.id), task.TaskId)
+// }
 
 func (w *WorkerService) processTask(task *psm.SubmitTaskRequest) {
 	log.Printf("Worker : %s processing task %s", string(w.id), task.TaskId)
 
 	re := regexp.MustCompile(`^\s*curl\b`)
+	re2 := regexp.MustCompile(`^\s*(git clone|cd|node)\b`)
+	rePython := regexp.MustCompile(`^\s*(python|python3)\b`)
 
 	if re.MatchString(task.Data) {
 		w.executeCurlCommand(task.Data)
+	} else if re2.MatchString(task.Data) {
+		w.runNodeServer(task.Data)
+	} else if rePython.MatchString(task.Data) {
+		w.executePythonCommand(task)
 	} else {
 		w.executeBashCommand(task)
 	}
-
 	log.Printf("Worker : %s processed task %s", string(w.id), task.TaskId)
+}
+
+func (w *WorkerService) executePythonCommand(task *psm.SubmitTaskRequest) {
+	log.Printf("Worker : %s executing Python command for task %s", string(w.id), task.TaskId)
+	log.Printf("Full task data: %s", task.Data)
+
+	pythonScript := strings.TrimPrefix(task.Data, "python3 -c ")
+	pythonScript = pythonScript[1 : len(pythonScript)-1]
+	pythonScript = strings.ReplaceAll(pythonScript, `\"`, `"`)
+
+	log.Printf("Python script to execute:\n%s", pythonScript)
+
+	// Create a temporary file
+	tmpfile, err := os.CreateTemp("", "python-script-*.py")
+	if err != nil {
+		log.Printf("Worker : %s failed to create temporary file: %v", string(w.id), err)
+		return
+	}
+	defer os.Remove(tmpfile.Name()) // Clean up
+
+	// Write the Python script to the temporary file
+	if _, err := tmpfile.WriteString(pythonScript); err != nil {
+		log.Printf("Worker : %s failed to write to temporary file: %v", string(w.id), err)
+		return
+	}
+	if err := tmpfile.Close(); err != nil {
+		log.Printf("Worker : %s failed to close temporary file: %v", string(w.id), err)
+		return
+	}
+
+	// Execute the Python script
+	cmd := exec.Command("python3", tmpfile.Name())
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		log.Printf("Worker : %s failed to execute Python script for task %s: %v\nOutput: %s", string(w.id), task.TaskId, err, string(output))
+		return
+	}
+
+	log.Printf("Worker : %s successfully executed Python script for task %s", string(w.id), task.TaskId)
+	log.Printf("Python script output:\n%s", string(output))
 }
 
 func (w *WorkerService) executeBashCommand(task *psm.SubmitTaskRequest) {
@@ -150,6 +214,20 @@ func (w *WorkerService) executeCurlCommand(command string) {
 	err := cmd.Run()
 	if err != nil {
 		log.Printf("Worker : %s failed to execute curl command: %v", string(w.id), err)
+	}
+}
+
+func (w *WorkerService) runNodeServer(command string) {
+	cmd := exec.Command("bash", "-c", command)
+
+	// Direct the command's output to the standard output and error streams
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	// Run the command
+	err := cmd.Run()
+	if err != nil {
+		log.Printf("Worker : %s failed to execute command: %v", string(w.id), err)
 	}
 }
 

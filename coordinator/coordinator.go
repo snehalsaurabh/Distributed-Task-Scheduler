@@ -173,17 +173,64 @@ func (c *CoordinatorService) scanDatabaseForTasks() {
 	for _, task := range tasks {
 		// log.Print("Task found: ", task.ID)
 		formattedTask := &psm.SubmitTaskRequest{TaskId: task.ID, Data: task.Command}
-		// log.Printf("Formatted Task : %v", formattedTask)
-		if err := c.submitTaskToWorker(ctx, formattedTask); err != nil {
-			log.Print("Failed to submit task: ", err)
-			continue
-		}
+		formattedFile := &psm.SubmitFileRequest{TaskId: task.ID, FileBuffer: task.FileContent}
 
-		if err := db_client.UpdatePickedTask(ctx, task.ID); err != nil {
-			log.Print("Failed to update picked task: ", err)
-			continue
+		if task.Command == "File" {
+			fmt.Printf("File Task Found")
+			c.submitFileToWorker(ctx, formattedFile)
+		} else {
+			if err := c.submitTaskToWorker(ctx, formattedTask); err != nil {
+				log.Print("Failed to submit task: ", err)
+				continue
+			}
+
+			if err := db_client.UpdatePickedTask(ctx, task.ID); err != nil {
+				log.Print("Failed to update picked task: ", err)
+				continue
+			}
 		}
 	}
+}
+
+func (c *CoordinatorService) submitFileToWorker(ctx context.Context, file *psm.SubmitFileRequest) error {
+	// Get the next available worker
+	worker := c.getNextWorker()
+	if worker == nil {
+		return errors.New("no worker available")
+	}
+
+	log.Printf("Submitting file for task %s to worker %d", file.TaskId, worker.WorkerId)
+
+	// Open the streaming RPC connection to the worker
+	stream, err := worker.WorkerClient.SubmitFile(ctx)
+	if err != nil {
+		log.Printf("Failed to open file stream to worker: %v", err)
+		return err
+	}
+
+	// Send the entire file buffer directly (no need for chunking if it's already in memory)
+	req := &psm.SubmitFileRequest{
+		TaskId:     file.TaskId,
+		FileBuffer: file.FileBuffer, // Assuming file.FileBuffer is the raw byte data
+	}
+
+	// Send the file to the worker
+	if err := stream.Send(req); err != nil {
+		log.Printf("Failed to send file buffer: %v", err)
+		return err
+	}
+
+	log.Printf("File buffer sent for task %s", file.TaskId)
+
+	// Close the stream and get the final response
+	res, err := stream.CloseAndRecv()
+	if err != nil {
+		log.Printf("Failed to receive response from worker: %v", err)
+		return err
+	}
+
+	log.Printf("File successfully submitted to worker. Task: %s, Response: %s", res.TaskId, res.Message)
+	return nil
 }
 
 func (c *CoordinatorService) submitTaskToWorker(ctx context.Context, task *psm.SubmitTaskRequest) error {

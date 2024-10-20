@@ -4,6 +4,7 @@ import (
 	"context"
 	"dts/psm"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/exec"
@@ -29,6 +30,7 @@ type WorkerService struct {
 	coordinatorClient  psm.CoordinatorServiceClient
 	pulseInterval      uint32
 	taskQueue          chan *psm.SubmitTaskRequest
+	fileQueue          chan *psm.SubmitFileRequest
 	ReceivedTasks      map[string]*psm.SubmitTaskRequest
 	ReceivedTasksMutex *sync.Mutex
 	ctx                context.Context
@@ -113,25 +115,6 @@ func (w *WorkerService) worker() {
 	}
 }
 
-// func (w *WorkerService) processTask(task *psm.SubmitTaskRequest) {
-// 	log.Printf("Worker : %s processing task %s", string(w.id), task.TaskId)
-
-// 	re := regexp.MustCompile(`^\s*curl\b`)
-// 	re2 := regexp.MustCompile(`^\s*(git clone|cd|node)\b`)
-// 	rePython := regexp.MustCompile(`^\s*(python|python3)\b`)
-
-// 	if re.MatchString(task.Data) {
-// 		w.executeCurlCommand(task.Data)
-// 	} else if re2.MatchString(task.Data) {
-// 		w.runNodeServer(task.Data)
-// 	} else if rePython.MatchString(task.Data) {
-
-// 	} else {
-// 		w.executeBashCommand(task)
-// 	}
-// 	log.Printf("Worker : %s processed task %s", string(w.id), task.TaskId)
-// }
-
 func (w *WorkerService) processTask(task *psm.SubmitTaskRequest) {
 	log.Printf("Worker : %s processing task %s", string(w.id), task.TaskId)
 
@@ -146,17 +129,96 @@ func (w *WorkerService) processTask(task *psm.SubmitTaskRequest) {
 	} else if rePython.MatchString(task.Data) {
 		w.executePythonCommand(task)
 	} else if task.Data == "File" {
-		// w.runPythonFile(task)
-		log.Printf("This is the binary (hex): %x", task.FileBuffer)
+		fmt.Printf("Caught File Run request")
 	} else {
 		w.executeBashCommand(task)
 	}
 	log.Printf("Worker : %s processed task %s", string(w.id), task.TaskId)
 }
 
-func (w *WorkerService) runPythonFile(task *psm.SubmitTaskRequest) {
+func (w *WorkerService) SubmitFile(stream psm.WorkerService_SubmitFileServer) error {
+	log.Printf("Worker : %s started receiving file tasks", string(w.id))
 
+	for {
+		// Receive the next request from the stream
+		req, err := stream.Recv()
+		if err == io.EOF {
+			// End of the stream, break out of the loop
+			log.Printf("Worker : %s finished receiving file tasks", string(w.id))
+			break
+		}
+		if err != nil {
+			log.Printf("Worker : %s error receiving file task: %v", string(w.id), err)
+			return err
+		}
+
+		go w.updateFileStatus(req, psm.TaskStatus_STARTED)
+		// Log the received file task
+		log.Printf("Worker : %s received file task %s", string(w.id), req.TaskId)
+
+		// Save the file
+		fileName, err := w.saveFile(req.TaskId, req.FileBuffer)
+		if err != nil {
+			log.Printf("Worker : %s failed to save file for task %s: %v", string(w.id), req.TaskId, err)
+			return err // You can choose to return a different error message if needed
+		}
+
+		log.Printf("Worker : %s saved file for task %s to %s", string(w.id), req.TaskId, fileName)
+
+		// Process the file
+		w.processFile(fileName, req.TaskId)
+
+		go w.updateFileStatus(req, psm.TaskStatus_COMPLETED)
+	}
+
+	// Send a response to the client indicating successful submission of file tasks
+	return stream.SendAndClose(&psm.SubmitFileResponse{
+		Message: "File tasks were submitted successfully",
+		Success: true,
+	})
 }
+
+func (w *WorkerService) saveFile(taskID string, fileBuffer []byte) (string, error) {
+	fileName := fmt.Sprintf("/tmp/task-%s.py", taskID) // Use .py extension
+	err := os.WriteFile(fileName, fileBuffer, 0644)    // Save the file
+	if err != nil {
+		log.Printf("Worker : %s failed to save file for task %s: %v", string(w.id), taskID, err)
+		return "", err
+	}
+
+	return fileName, nil
+}
+
+func (w *WorkerService) processFile(fileName string, taskID string) {
+	log.Printf("Worker : %s processing file task %s", string(w.id), taskID)
+
+	// Ensure the file is removed after execution, regardless of success or failure
+	defer func() {
+		err := os.Remove(fileName)
+		if err != nil {
+			log.Printf("Worker : %s failed to delete file %s: %v", string(w.id), fileName, err)
+		} else {
+			log.Printf("Worker : %s successfully deleted file %s", string(w.id), fileName)
+		}
+	}()
+
+	// Example: If the file is a script or executable, you can run it
+	cmd := exec.Command("python3", fileName) // Modify as needed, e.g., "python" for Python files
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	// Run the file and capture the output
+	if err := cmd.Run(); err != nil {
+		log.Printf("Worker : %s failed to execute file for task %s: %v", string(w.id), taskID, err)
+	} else {
+		log.Printf("Worker : %s successfully processed file task %s", string(w.id), taskID)
+	}
+
+	// Update task status to "COMPLETED" if the file was successfully processed
+	w.updateStatus(&psm.SubmitTaskRequest{TaskId: taskID}, psm.TaskStatus_COMPLETED)
+}
+
+// Execute Scripts
 
 func (w *WorkerService) executePythonCommand(task *psm.SubmitTaskRequest) {
 	log.Printf("Worker : %s executing Python command for task %s", string(w.id), task.TaskId)
@@ -249,7 +311,19 @@ func (w *WorkerService) updateStatus(task *psm.SubmitTaskRequest, status psm.Tas
 	if err != nil {
 		log.Printf("Worker : %s failed to update task status", string(w.id))
 	}
+}
 
+func (w *WorkerService) updateFileStatus(task *psm.SubmitFileRequest, status psm.TaskStatus) {
+	_, err := w.coordinatorClient.UpdateTaskStatus(w.ctx, &psm.UpdateTaskStatusRequest{
+		TaskId:      task.TaskId,
+		Status:      status,
+		StartedAt:   time.Now().Unix(),
+		CompletedAt: time.Now().Unix(),
+	})
+
+	if err != nil {
+		log.Printf("Worker : %s failed to update task status", string(w.id))
+	}
 }
 
 func (w *WorkerService) pulse() {

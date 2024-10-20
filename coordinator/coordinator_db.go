@@ -19,16 +19,18 @@ func NewPrismaCoordinatorService(db *db.PrismaClient) *PrismaCoordinatorService 
 }
 
 func (d *PrismaCoordinatorService) fetchQualifiedData(ctx context.Context) ([]struct {
-	ID      string
-	Command string
+	ID          string
+	Command     string
+	FileContent []byte
 }, error) {
 	var tasks []struct {
-		ID      string
-		Command string
+		ID          string
+		Command     string
+		FileContent []byte
 	}
 
 	query := `
-        SELECT id, command 
+        SELECT id, command , fileContent
         FROM "Tasks" 
         WHERE "scheduledAt" < (NOW() + INTERVAL '30 seconds') 
         AND "pickedAt" IS NULL 

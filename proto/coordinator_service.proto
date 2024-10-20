@@ -22,10 +22,10 @@ message SubmitTaskResponse {
     bool success = 3;
 }
 
-message SubmitFIleRequest {
+message SubmitFileRequest {
     string task_id = 1;
     string data = 2;
-    string fileBuffer = 3;
+    bytes fileBuffer = 3;
 }
 
 message SubmitFileResponse {

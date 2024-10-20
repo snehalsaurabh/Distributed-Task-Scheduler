@@ -20,6 +20,7 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	WorkerService_SubmitTask_FullMethodName = "/dts.WorkerService/SubmitTask"
+	WorkerService_SubmitFile_FullMethodName = "/dts.WorkerService/SubmitFile"
 )
 
 // WorkerServiceClient is the client API for WorkerService service.
@@ -27,6 +28,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type WorkerServiceClient interface {
 	SubmitTask(ctx context.Context, in *SubmitTaskRequest, opts ...grpc.CallOption) (*SubmitTaskResponse, error)
+	SubmitFile(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[SubmitFileRequest, SubmitFileResponse], error)
 }
 
 type workerServiceClient struct {
@@ -47,11 +49,25 @@ func (c *workerServiceClient) SubmitTask(ctx context.Context, in *SubmitTaskRequ
 	return out, nil
 }
 
+func (c *workerServiceClient) SubmitFile(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[SubmitFileRequest, SubmitFileResponse], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &WorkerService_ServiceDesc.Streams[0], WorkerService_SubmitFile_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[SubmitFileRequest, SubmitFileResponse]{ClientStream: stream}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type WorkerService_SubmitFileClient = grpc.ClientStreamingClient[SubmitFileRequest, SubmitFileResponse]
+
 // WorkerServiceServer is the server API for WorkerService service.
 // All implementations must embed UnimplementedWorkerServiceServer
 // for forward compatibility.
 type WorkerServiceServer interface {
 	SubmitTask(context.Context, *SubmitTaskRequest) (*SubmitTaskResponse, error)
+	SubmitFile(grpc.ClientStreamingServer[SubmitFileRequest, SubmitFileResponse]) error
 	mustEmbedUnimplementedWorkerServiceServer()
 }
 
@@ -64,6 +80,9 @@ type UnimplementedWorkerServiceServer struct{}
 
 func (UnimplementedWorkerServiceServer) SubmitTask(context.Context, *SubmitTaskRequest) (*SubmitTaskResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SubmitTask not implemented")
+}
+func (UnimplementedWorkerServiceServer) SubmitFile(grpc.ClientStreamingServer[SubmitFileRequest, SubmitFileResponse]) error {
+	return status.Errorf(codes.Unimplemented, "method SubmitFile not implemented")
 }
 func (UnimplementedWorkerServiceServer) mustEmbedUnimplementedWorkerServiceServer() {}
 func (UnimplementedWorkerServiceServer) testEmbeddedByValue()                       {}
@@ -104,6 +123,13 @@ func _WorkerService_SubmitTask_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _WorkerService_SubmitFile_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(WorkerServiceServer).SubmitFile(&grpc.GenericServerStream[SubmitFileRequest, SubmitFileResponse]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type WorkerService_SubmitFileServer = grpc.ClientStreamingServer[SubmitFileRequest, SubmitFileResponse]
+
 // WorkerService_ServiceDesc is the grpc.ServiceDesc for WorkerService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -116,7 +142,13 @@ var WorkerService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _WorkerService_SubmitTask_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "SubmitFile",
+			Handler:       _WorkerService_SubmitFile_Handler,
+			ClientStreams: true,
+		},
+	},
 	Metadata: "proto/coordinator_service.proto",
 }
 

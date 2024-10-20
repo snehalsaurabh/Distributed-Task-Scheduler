@@ -21,8 +21,8 @@ RUN echo '#!/bin/sh' > wait-for-db.sh && \
 EXPOSE 8080
 
 
-CMD ["./wait-for-db.sh", "sh", "-c", "go run github.com/steebchen/prisma-client-go migrate deploy --preview-feature && touch /app/migrations_complete && echo 'Migrations completed' && go run cmd/schedular/main.go -port 8080"]
+# CMD ["./wait-for-db.sh", "sh", "-c", "go run github.com/steebchen/prisma-client-go migrate deploy --preview-feature && touch /app/migrations_complete && echo 'Migrations completed' && go run cmd/schedular/main.go -port 8080"]
 
 # && touch /app/migrations_complete && echo 'Migrations completed' 
 
-# CMD ["./wait-for-db.sh", "sh", "-c", "go run github.com/steebchen/prisma-client-go migrate dev --name add --preview-feature --create-only && go run github.com/steebchen/prisma-client-go migrate deploy --preview-feature && touch /app/migrations_complete && echo 'Migrations completed' && go run cmd/schedular/main.go -port 8080"]
+CMD ["./wait-for-db.sh", "sh", "-c", "go run github.com/steebchen/prisma-client-go migrate dev --name add --preview-feature --create-only && go run github.com/steebchen/prisma-client-go migrate deploy --preview-feature && touch /app/migrations_complete && echo 'Migrations completed' && go run cmd/schedular/main.go -port 8080"]

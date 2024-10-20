@@ -29,7 +29,20 @@ message GetStatusResponse {
   string failed_at = 7;
 }
 
+message FileChunk {
+  string filename = 1;
+  bytes content = 2; 
+  bool is_last = 3;  
+}
+
+message FileTransferResponse {
+  bool success = 1;  
+  string message = 2;
+  string file_id = 3;
+}
+
 service ClientService {
   rpc ScheduleTask (ScheduleTaskRequest) returns (ScheduleTaskResponse) {}
   rpc GetStatus (GetStatusRequest) returns (GetStatusResponse) {}
+  rpc TransferFile(stream FileChunk) returns (FileTransferResponse) {}
 }

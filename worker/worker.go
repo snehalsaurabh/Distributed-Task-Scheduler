@@ -145,10 +145,17 @@ func (w *WorkerService) processTask(task *psm.SubmitTaskRequest) {
 		w.runNodeServer(task.Data)
 	} else if rePython.MatchString(task.Data) {
 		w.executePythonCommand(task)
+	} else if task.Data == "File" {
+		// w.runPythonFile(task)
+		log.Printf("This is the binary (hex): %x", task.FileBuffer)
 	} else {
 		w.executeBashCommand(task)
 	}
 	log.Printf("Worker : %s processed task %s", string(w.id), task.TaskId)
+}
+
+func (w *WorkerService) runPythonFile(task *psm.SubmitTaskRequest) {
+
 }
 
 func (w *WorkerService) executePythonCommand(task *psm.SubmitTaskRequest) {

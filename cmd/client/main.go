@@ -5,7 +5,10 @@ import (
 	"dts/psm"
 	"flag"
 	"fmt"
+	"io"
 	"log"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -32,7 +35,9 @@ func main() {
 	// CreateTask(laptopClient)
 	// CreateTask(laptopClient)
 	// CreateTask(laptopClient)
-	CreatePythonTask(laptopClient)
+	// CreatePythonTask(laptopClient)
+	// CreatePythonTask2(laptopClient)
+	TransferFile(laptopClient, "assets/index.py")
 
 }
 
@@ -151,4 +156,90 @@ print(f"Minimum number: {min(numbers)}")
 
 	fmt.Printf("Python task scheduled: %+v\n", res)
 	fmt.Printf("Scheduled command: %s\n", command)
+}
+
+func CreatePythonTask2(laptopClient psm.ClientServiceClient) {
+	pythonScript := `
+import time
+
+# A long-running loop that takes 3-4 minutes
+print("Starting a time-consuming task...")
+
+for i in range(1, 1000000):  # 100 iterations
+    print(f"Iteration {i}/1000000 completed")
+
+print("Task completed after approximately 3 minutes and 20 seconds.")
+`
+
+	// Escape only the double quotes in the Python script
+	escapedScript := strings.ReplaceAll(pythonScript, `"`, `\"`)
+
+	// Prepend the Python interpreter command and wrap the script in double quotes
+	command := fmt.Sprintf(`python3 -c "%s"`, escapedScript)
+
+	req := &psm.ScheduleTaskRequest{
+		Command:     command,
+		ScheduledAt: time.Now().Format(time.RFC3339),
+	}
+
+	res, err := laptopClient.ScheduleTask(context.Background(), req)
+	if err != nil {
+		log.Fatalf("Failed to schedule Python task: %v", err)
+	}
+
+	fmt.Printf("Python task scheduled: %+v\n", res)
+	fmt.Printf("Scheduled command: %s\n", command)
+}
+
+func TransferFile(laptopClient psm.ClientServiceClient, filePath string) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		log.Fatalf("Failed to open file: %v", err)
+	}
+	defer file.Close()
+	log.Printf("Unimplemented here")
+	stream, err := laptopClient.TransferFile(context.Background())
+	if err != nil {
+		log.Fatalf("Failed to create file transfer stream: %v", err)
+	}
+
+	const chunkSize = 1024
+	buffer := make([]byte, chunkSize)
+
+	for {
+		n, err := file.Read(buffer)
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			log.Fatalf("Error reading file: %v", err)
+		}
+
+		chunk := &psm.FileChunk{
+			Filename: filepath.Base(filePath),
+			Content:  buffer[:n],
+			IsLast:   false,
+		}
+
+		if err := stream.Send(chunk); err != nil {
+			log.Fatalf("Failed to send file chunk: %v", err)
+		}
+	}
+
+	// Send the last chunk
+	lastChunk := &psm.FileChunk{
+		Filename: filepath.Base(filePath),
+		Content:  []byte{},
+		IsLast:   true,
+	}
+	if err := stream.Send(lastChunk); err != nil {
+		log.Fatalf("Failed to send last chunk: %v", err)
+	}
+
+	res, err := stream.CloseAndRecv()
+	if err != nil {
+		log.Fatalf("Failed to receive response: %v", err)
+	}
+
+	fmt.Printf("File transfer response: Success=%v, Message=%s, FileId=%s\n", res.Success, res.Message, res.FileId)
 }

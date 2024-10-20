@@ -89,6 +89,8 @@ model Tasks {
   startedAt   DateTime?
   completedAt DateTime?
   failedAt    DateTime?
+  fileContent Bytes?
+  fileId      String?
 
   @@index([scheduledAt])
 }
@@ -213,6 +215,8 @@ const (
 	TasksScalarFieldEnumStartedAt   TasksScalarFieldEnum = "startedAt"
 	TasksScalarFieldEnumCompletedAt TasksScalarFieldEnum = "completedAt"
 	TasksScalarFieldEnumFailedAt    TasksScalarFieldEnum = "failedAt"
+	TasksScalarFieldEnumFileContent TasksScalarFieldEnum = "fileContent"
+	TasksScalarFieldEnumFileID      TasksScalarFieldEnum = "fileId"
 )
 
 type SortOrder string
@@ -282,6 +286,10 @@ const tasksFieldStartedAt tasksPrismaFields = "startedAt"
 const tasksFieldCompletedAt tasksPrismaFields = "completedAt"
 
 const tasksFieldFailedAt tasksPrismaFields = "failedAt"
+
+const tasksFieldFileContent tasksPrismaFields = "fileContent"
+
+const tasksFieldFileID tasksPrismaFields = "fileId"
 
 // --- template mock.gotpl ---
 func NewMock() (*PrismaClient, *Mock, func(t *testing.T)) {
@@ -365,6 +373,8 @@ type InnerTasks struct {
 	StartedAt   *DateTime `json:"startedAt,omitempty"`
 	CompletedAt *DateTime `json:"completedAt,omitempty"`
 	FailedAt    *DateTime `json:"failedAt,omitempty"`
+	FileContent *Bytes    `json:"fileContent,omitempty"`
+	FileID      *string   `json:"fileId,omitempty"`
 }
 
 // RawTasksModel is a struct for Tasks when used in raw queries
@@ -376,6 +386,8 @@ type RawTasksModel struct {
 	StartedAt   *RawDateTime `json:"startedAt,omitempty"`
 	CompletedAt *RawDateTime `json:"completedAt,omitempty"`
 	FailedAt    *RawDateTime `json:"failedAt,omitempty"`
+	FileContent *RawBytes    `json:"fileContent,omitempty"`
+	FileID      *RawString   `json:"fileId,omitempty"`
 }
 
 // RelationsTasks holds the relation data separately
@@ -408,6 +420,20 @@ func (r TasksModel) FailedAt() (value DateTime, ok bool) {
 		return value, false
 	}
 	return *r.InnerTasks.FailedAt, true
+}
+
+func (r TasksModel) FileContent() (value Bytes, ok bool) {
+	if r.InnerTasks.FileContent == nil {
+		return value, false
+	}
+	return *r.InnerTasks.FileContent, true
+}
+
+func (r TasksModel) FileID() (value String, ok bool) {
+	if r.InnerTasks.FileID == nil {
+		return value, false
+	}
+	return *r.InnerTasks.FileID, true
 }
 
 // --- template query.gotpl ---
@@ -452,6 +478,16 @@ type tasksQuery struct {
 	//
 	// @optional
 	FailedAt tasksQueryFailedAtDateTime
+
+	// FileContent
+	//
+	// @optional
+	FileContent tasksQueryFileContentBytes
+
+	// FileID
+	//
+	// @optional
+	FileID tasksQueryFileIDString
 }
 
 func (tasksQuery) Not(params ...TasksWhereParam) tasksDefaultParam {
@@ -2934,6 +2970,574 @@ func (r tasksQueryFailedAtDateTime) Field() tasksPrismaFields {
 	return tasksFieldFailedAt
 }
 
+// base struct
+type tasksQueryFileContentBytes struct{}
+
+// Set the optional value of FileContent
+func (r tasksQueryFileContentBytes) Set(value Bytes) tasksSetParam {
+
+	return tasksSetParam{
+		data: builder.Field{
+			Name:  "fileContent",
+			Value: value,
+		},
+	}
+
+}
+
+// Set the optional value of FileContent dynamically
+func (r tasksQueryFileContentBytes) SetIfPresent(value *Bytes) tasksSetParam {
+	if value == nil {
+		return tasksSetParam{}
+	}
+
+	return r.Set(*value)
+}
+
+// Set the optional value of FileContent dynamically
+func (r tasksQueryFileContentBytes) SetOptional(value *Bytes) tasksSetParam {
+	if value == nil {
+
+		var v *Bytes
+		return tasksSetParam{
+			data: builder.Field{
+				Name:  "fileContent",
+				Value: v,
+			},
+		}
+	}
+
+	return r.Set(*value)
+}
+
+func (r tasksQueryFileContentBytes) Equals(value Bytes) tasksWithPrismaFileContentEqualsParam {
+
+	return tasksWithPrismaFileContentEqualsParam{
+		data: builder.Field{
+			Name: "fileContent",
+			Fields: []builder.Field{
+				{
+					Name:  "equals",
+					Value: value,
+				},
+			},
+		},
+	}
+}
+
+func (r tasksQueryFileContentBytes) EqualsIfPresent(value *Bytes) tasksWithPrismaFileContentEqualsParam {
+	if value == nil {
+		return tasksWithPrismaFileContentEqualsParam{}
+	}
+	return r.Equals(*value)
+}
+
+func (r tasksQueryFileContentBytes) EqualsOptional(value *Bytes) tasksDefaultParam {
+	return tasksDefaultParam{
+		data: builder.Field{
+			Name: "fileContent",
+			Fields: []builder.Field{
+				{
+					Name:  "equals",
+					Value: value,
+				},
+			},
+		},
+	}
+}
+
+func (r tasksQueryFileContentBytes) IsNull() tasksDefaultParam {
+	var str *string = nil
+	return tasksDefaultParam{
+		data: builder.Field{
+			Name: "fileContent",
+			Fields: []builder.Field{
+				{
+					Name:  "equals",
+					Value: str,
+				},
+			},
+		},
+	}
+}
+
+func (r tasksQueryFileContentBytes) Order(direction SortOrder) tasksDefaultParam {
+	return tasksDefaultParam{
+		data: builder.Field{
+			Name:  "fileContent",
+			Value: direction,
+		},
+	}
+}
+
+func (r tasksQueryFileContentBytes) Cursor(cursor Bytes) tasksCursorParam {
+	return tasksCursorParam{
+		data: builder.Field{
+			Name:  "fileContent",
+			Value: cursor,
+		},
+	}
+}
+
+func (r tasksQueryFileContentBytes) In(value []Bytes) tasksDefaultParam {
+	return tasksDefaultParam{
+		data: builder.Field{
+			Name: "fileContent",
+			Fields: []builder.Field{
+				{
+					Name:  "in",
+					Value: value,
+				},
+			},
+		},
+	}
+}
+
+func (r tasksQueryFileContentBytes) InIfPresent(value []Bytes) tasksDefaultParam {
+	if value == nil {
+		return tasksDefaultParam{}
+	}
+	return r.In(value)
+}
+
+func (r tasksQueryFileContentBytes) NotIn(value []Bytes) tasksDefaultParam {
+	return tasksDefaultParam{
+		data: builder.Field{
+			Name: "fileContent",
+			Fields: []builder.Field{
+				{
+					Name:  "notIn",
+					Value: value,
+				},
+			},
+		},
+	}
+}
+
+func (r tasksQueryFileContentBytes) NotInIfPresent(value []Bytes) tasksDefaultParam {
+	if value == nil {
+		return tasksDefaultParam{}
+	}
+	return r.NotIn(value)
+}
+
+func (r tasksQueryFileContentBytes) Not(value Bytes) tasksDefaultParam {
+	return tasksDefaultParam{
+		data: builder.Field{
+			Name: "fileContent",
+			Fields: []builder.Field{
+				{
+					Name:  "not",
+					Value: value,
+				},
+			},
+		},
+	}
+}
+
+func (r tasksQueryFileContentBytes) NotIfPresent(value *Bytes) tasksDefaultParam {
+	if value == nil {
+		return tasksDefaultParam{}
+	}
+	return r.Not(*value)
+}
+
+func (r tasksQueryFileContentBytes) Field() tasksPrismaFields {
+	return tasksFieldFileContent
+}
+
+// base struct
+type tasksQueryFileIDString struct{}
+
+// Set the optional value of FileID
+func (r tasksQueryFileIDString) Set(value string) tasksSetParam {
+
+	return tasksSetParam{
+		data: builder.Field{
+			Name:  "fileId",
+			Value: value,
+		},
+	}
+
+}
+
+// Set the optional value of FileID dynamically
+func (r tasksQueryFileIDString) SetIfPresent(value *String) tasksSetParam {
+	if value == nil {
+		return tasksSetParam{}
+	}
+
+	return r.Set(*value)
+}
+
+// Set the optional value of FileID dynamically
+func (r tasksQueryFileIDString) SetOptional(value *String) tasksSetParam {
+	if value == nil {
+
+		var v *string
+		return tasksSetParam{
+			data: builder.Field{
+				Name:  "fileId",
+				Value: v,
+			},
+		}
+	}
+
+	return r.Set(*value)
+}
+
+func (r tasksQueryFileIDString) Equals(value string) tasksWithPrismaFileIDEqualsParam {
+
+	return tasksWithPrismaFileIDEqualsParam{
+		data: builder.Field{
+			Name: "fileId",
+			Fields: []builder.Field{
+				{
+					Name:  "equals",
+					Value: value,
+				},
+			},
+		},
+	}
+}
+
+func (r tasksQueryFileIDString) EqualsIfPresent(value *string) tasksWithPrismaFileIDEqualsParam {
+	if value == nil {
+		return tasksWithPrismaFileIDEqualsParam{}
+	}
+	return r.Equals(*value)
+}
+
+func (r tasksQueryFileIDString) EqualsOptional(value *String) tasksDefaultParam {
+	return tasksDefaultParam{
+		data: builder.Field{
+			Name: "fileId",
+			Fields: []builder.Field{
+				{
+					Name:  "equals",
+					Value: value,
+				},
+			},
+		},
+	}
+}
+
+func (r tasksQueryFileIDString) IsNull() tasksDefaultParam {
+	var str *string = nil
+	return tasksDefaultParam{
+		data: builder.Field{
+			Name: "fileId",
+			Fields: []builder.Field{
+				{
+					Name:  "equals",
+					Value: str,
+				},
+			},
+		},
+	}
+}
+
+func (r tasksQueryFileIDString) Order(direction SortOrder) tasksDefaultParam {
+	return tasksDefaultParam{
+		data: builder.Field{
+			Name:  "fileId",
+			Value: direction,
+		},
+	}
+}
+
+func (r tasksQueryFileIDString) Cursor(cursor string) tasksCursorParam {
+	return tasksCursorParam{
+		data: builder.Field{
+			Name:  "fileId",
+			Value: cursor,
+		},
+	}
+}
+
+func (r tasksQueryFileIDString) In(value []string) tasksDefaultParam {
+	return tasksDefaultParam{
+		data: builder.Field{
+			Name: "fileId",
+			Fields: []builder.Field{
+				{
+					Name:  "in",
+					Value: value,
+				},
+			},
+		},
+	}
+}
+
+func (r tasksQueryFileIDString) InIfPresent(value []string) tasksDefaultParam {
+	if value == nil {
+		return tasksDefaultParam{}
+	}
+	return r.In(value)
+}
+
+func (r tasksQueryFileIDString) NotIn(value []string) tasksDefaultParam {
+	return tasksDefaultParam{
+		data: builder.Field{
+			Name: "fileId",
+			Fields: []builder.Field{
+				{
+					Name:  "notIn",
+					Value: value,
+				},
+			},
+		},
+	}
+}
+
+func (r tasksQueryFileIDString) NotInIfPresent(value []string) tasksDefaultParam {
+	if value == nil {
+		return tasksDefaultParam{}
+	}
+	return r.NotIn(value)
+}
+
+func (r tasksQueryFileIDString) Lt(value string) tasksDefaultParam {
+	return tasksDefaultParam{
+		data: builder.Field{
+			Name: "fileId",
+			Fields: []builder.Field{
+				{
+					Name:  "lt",
+					Value: value,
+				},
+			},
+		},
+	}
+}
+
+func (r tasksQueryFileIDString) LtIfPresent(value *string) tasksDefaultParam {
+	if value == nil {
+		return tasksDefaultParam{}
+	}
+	return r.Lt(*value)
+}
+
+func (r tasksQueryFileIDString) Lte(value string) tasksDefaultParam {
+	return tasksDefaultParam{
+		data: builder.Field{
+			Name: "fileId",
+			Fields: []builder.Field{
+				{
+					Name:  "lte",
+					Value: value,
+				},
+			},
+		},
+	}
+}
+
+func (r tasksQueryFileIDString) LteIfPresent(value *string) tasksDefaultParam {
+	if value == nil {
+		return tasksDefaultParam{}
+	}
+	return r.Lte(*value)
+}
+
+func (r tasksQueryFileIDString) Gt(value string) tasksDefaultParam {
+	return tasksDefaultParam{
+		data: builder.Field{
+			Name: "fileId",
+			Fields: []builder.Field{
+				{
+					Name:  "gt",
+					Value: value,
+				},
+			},
+		},
+	}
+}
+
+func (r tasksQueryFileIDString) GtIfPresent(value *string) tasksDefaultParam {
+	if value == nil {
+		return tasksDefaultParam{}
+	}
+	return r.Gt(*value)
+}
+
+func (r tasksQueryFileIDString) Gte(value string) tasksDefaultParam {
+	return tasksDefaultParam{
+		data: builder.Field{
+			Name: "fileId",
+			Fields: []builder.Field{
+				{
+					Name:  "gte",
+					Value: value,
+				},
+			},
+		},
+	}
+}
+
+func (r tasksQueryFileIDString) GteIfPresent(value *string) tasksDefaultParam {
+	if value == nil {
+		return tasksDefaultParam{}
+	}
+	return r.Gte(*value)
+}
+
+func (r tasksQueryFileIDString) Contains(value string) tasksDefaultParam {
+	return tasksDefaultParam{
+		data: builder.Field{
+			Name: "fileId",
+			Fields: []builder.Field{
+				{
+					Name:  "contains",
+					Value: value,
+				},
+			},
+		},
+	}
+}
+
+func (r tasksQueryFileIDString) ContainsIfPresent(value *string) tasksDefaultParam {
+	if value == nil {
+		return tasksDefaultParam{}
+	}
+	return r.Contains(*value)
+}
+
+func (r tasksQueryFileIDString) StartsWith(value string) tasksDefaultParam {
+	return tasksDefaultParam{
+		data: builder.Field{
+			Name: "fileId",
+			Fields: []builder.Field{
+				{
+					Name:  "startsWith",
+					Value: value,
+				},
+			},
+		},
+	}
+}
+
+func (r tasksQueryFileIDString) StartsWithIfPresent(value *string) tasksDefaultParam {
+	if value == nil {
+		return tasksDefaultParam{}
+	}
+	return r.StartsWith(*value)
+}
+
+func (r tasksQueryFileIDString) EndsWith(value string) tasksDefaultParam {
+	return tasksDefaultParam{
+		data: builder.Field{
+			Name: "fileId",
+			Fields: []builder.Field{
+				{
+					Name:  "endsWith",
+					Value: value,
+				},
+			},
+		},
+	}
+}
+
+func (r tasksQueryFileIDString) EndsWithIfPresent(value *string) tasksDefaultParam {
+	if value == nil {
+		return tasksDefaultParam{}
+	}
+	return r.EndsWith(*value)
+}
+
+func (r tasksQueryFileIDString) Mode(value QueryMode) tasksDefaultParam {
+	return tasksDefaultParam{
+		data: builder.Field{
+			Name: "fileId",
+			Fields: []builder.Field{
+				{
+					Name:  "mode",
+					Value: value,
+				},
+			},
+		},
+	}
+}
+
+func (r tasksQueryFileIDString) ModeIfPresent(value *QueryMode) tasksDefaultParam {
+	if value == nil {
+		return tasksDefaultParam{}
+	}
+	return r.Mode(*value)
+}
+
+func (r tasksQueryFileIDString) Not(value string) tasksDefaultParam {
+	return tasksDefaultParam{
+		data: builder.Field{
+			Name: "fileId",
+			Fields: []builder.Field{
+				{
+					Name:  "not",
+					Value: value,
+				},
+			},
+		},
+	}
+}
+
+func (r tasksQueryFileIDString) NotIfPresent(value *string) tasksDefaultParam {
+	if value == nil {
+		return tasksDefaultParam{}
+	}
+	return r.Not(*value)
+}
+
+// deprecated: Use StartsWith instead.
+
+func (r tasksQueryFileIDString) HasPrefix(value string) tasksDefaultParam {
+	return tasksDefaultParam{
+		data: builder.Field{
+			Name: "fileId",
+			Fields: []builder.Field{
+				{
+					Name:  "starts_with",
+					Value: value,
+				},
+			},
+		},
+	}
+}
+
+// deprecated: Use StartsWithIfPresent instead.
+func (r tasksQueryFileIDString) HasPrefixIfPresent(value *string) tasksDefaultParam {
+	if value == nil {
+		return tasksDefaultParam{}
+	}
+	return r.HasPrefix(*value)
+}
+
+// deprecated: Use EndsWith instead.
+
+func (r tasksQueryFileIDString) HasSuffix(value string) tasksDefaultParam {
+	return tasksDefaultParam{
+		data: builder.Field{
+			Name: "fileId",
+			Fields: []builder.Field{
+				{
+					Name:  "ends_with",
+					Value: value,
+				},
+			},
+		},
+	}
+}
+
+// deprecated: Use EndsWithIfPresent instead.
+func (r tasksQueryFileIDString) HasSuffixIfPresent(value *string) tasksDefaultParam {
+	if value == nil {
+		return tasksDefaultParam{}
+	}
+	return r.HasSuffix(*value)
+}
+
+func (r tasksQueryFileIDString) Field() tasksPrismaFields {
+	return tasksFieldFileID
+}
+
 // --- template actions.gotpl ---
 var countOutput = []builder.Output{
 	{Name: "count"},
@@ -2952,6 +3556,8 @@ var tasksOutput = []builder.Output{
 	{Name: "startedAt"},
 	{Name: "completedAt"},
 	{Name: "failedAt"},
+	{Name: "fileContent"},
+	{Name: "fileId"},
 }
 
 type TasksRelationWith interface {
@@ -3663,6 +4269,162 @@ func (p tasksWithPrismaFailedAtEqualsUniqueParam) failedAtField() {}
 
 func (tasksWithPrismaFailedAtEqualsUniqueParam) unique() {}
 func (tasksWithPrismaFailedAtEqualsUniqueParam) equals() {}
+
+type TasksWithPrismaFileContentEqualsSetParam interface {
+	field() builder.Field
+	getQuery() builder.Query
+	equals()
+	tasksModel()
+	fileContentField()
+}
+
+type TasksWithPrismaFileContentSetParam interface {
+	field() builder.Field
+	getQuery() builder.Query
+	tasksModel()
+	fileContentField()
+}
+
+type tasksWithPrismaFileContentSetParam struct {
+	data  builder.Field
+	query builder.Query
+}
+
+func (p tasksWithPrismaFileContentSetParam) field() builder.Field {
+	return p.data
+}
+
+func (p tasksWithPrismaFileContentSetParam) getQuery() builder.Query {
+	return p.query
+}
+
+func (p tasksWithPrismaFileContentSetParam) tasksModel() {}
+
+func (p tasksWithPrismaFileContentSetParam) fileContentField() {}
+
+type TasksWithPrismaFileContentWhereParam interface {
+	field() builder.Field
+	getQuery() builder.Query
+	tasksModel()
+	fileContentField()
+}
+
+type tasksWithPrismaFileContentEqualsParam struct {
+	data  builder.Field
+	query builder.Query
+}
+
+func (p tasksWithPrismaFileContentEqualsParam) field() builder.Field {
+	return p.data
+}
+
+func (p tasksWithPrismaFileContentEqualsParam) getQuery() builder.Query {
+	return p.query
+}
+
+func (p tasksWithPrismaFileContentEqualsParam) tasksModel() {}
+
+func (p tasksWithPrismaFileContentEqualsParam) fileContentField() {}
+
+func (tasksWithPrismaFileContentSetParam) settable()  {}
+func (tasksWithPrismaFileContentEqualsParam) equals() {}
+
+type tasksWithPrismaFileContentEqualsUniqueParam struct {
+	data  builder.Field
+	query builder.Query
+}
+
+func (p tasksWithPrismaFileContentEqualsUniqueParam) field() builder.Field {
+	return p.data
+}
+
+func (p tasksWithPrismaFileContentEqualsUniqueParam) getQuery() builder.Query {
+	return p.query
+}
+
+func (p tasksWithPrismaFileContentEqualsUniqueParam) tasksModel()       {}
+func (p tasksWithPrismaFileContentEqualsUniqueParam) fileContentField() {}
+
+func (tasksWithPrismaFileContentEqualsUniqueParam) unique() {}
+func (tasksWithPrismaFileContentEqualsUniqueParam) equals() {}
+
+type TasksWithPrismaFileIDEqualsSetParam interface {
+	field() builder.Field
+	getQuery() builder.Query
+	equals()
+	tasksModel()
+	fileIDField()
+}
+
+type TasksWithPrismaFileIDSetParam interface {
+	field() builder.Field
+	getQuery() builder.Query
+	tasksModel()
+	fileIDField()
+}
+
+type tasksWithPrismaFileIDSetParam struct {
+	data  builder.Field
+	query builder.Query
+}
+
+func (p tasksWithPrismaFileIDSetParam) field() builder.Field {
+	return p.data
+}
+
+func (p tasksWithPrismaFileIDSetParam) getQuery() builder.Query {
+	return p.query
+}
+
+func (p tasksWithPrismaFileIDSetParam) tasksModel() {}
+
+func (p tasksWithPrismaFileIDSetParam) fileIDField() {}
+
+type TasksWithPrismaFileIDWhereParam interface {
+	field() builder.Field
+	getQuery() builder.Query
+	tasksModel()
+	fileIDField()
+}
+
+type tasksWithPrismaFileIDEqualsParam struct {
+	data  builder.Field
+	query builder.Query
+}
+
+func (p tasksWithPrismaFileIDEqualsParam) field() builder.Field {
+	return p.data
+}
+
+func (p tasksWithPrismaFileIDEqualsParam) getQuery() builder.Query {
+	return p.query
+}
+
+func (p tasksWithPrismaFileIDEqualsParam) tasksModel() {}
+
+func (p tasksWithPrismaFileIDEqualsParam) fileIDField() {}
+
+func (tasksWithPrismaFileIDSetParam) settable()  {}
+func (tasksWithPrismaFileIDEqualsParam) equals() {}
+
+type tasksWithPrismaFileIDEqualsUniqueParam struct {
+	data  builder.Field
+	query builder.Query
+}
+
+func (p tasksWithPrismaFileIDEqualsUniqueParam) field() builder.Field {
+	return p.data
+}
+
+func (p tasksWithPrismaFileIDEqualsUniqueParam) getQuery() builder.Query {
+	return p.query
+}
+
+func (p tasksWithPrismaFileIDEqualsUniqueParam) tasksModel()  {}
+func (p tasksWithPrismaFileIDEqualsUniqueParam) fileIDField() {}
+
+func (tasksWithPrismaFileIDEqualsUniqueParam) unique() {}
+func (tasksWithPrismaFileIDEqualsUniqueParam) equals() {}
 
 // --- template create.gotpl ---
 

@@ -4,8 +4,10 @@ import (
 	"context"
 	"dts/prisma/db"
 	"dts/psm"
+	"io"
 	"log"
 
+	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -58,4 +60,45 @@ func (s *schedularService) GetStatus(ctx context.Context, req *psm.GetStatusRequ
 		Command:     task.Command,
 		ScheduledAt: task.ScheduledAt.String(),
 	}, nil
+}
+
+func (s *schedularService) TransferFile(stream psm.ClientService_TransferFileServer) error {
+	db_service := NewPrismaSchedularService(s.Db)
+	var fileBuffer []byte
+	var filename string
+
+	for {
+		chunk, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return status.Errorf(codes.Internal, "Error receiving file chunk: %v", err)
+		}
+
+		if filename == "" {
+			filename = chunk.Filename
+		}
+
+		fileBuffer = append(fileBuffer, chunk.Content...)
+
+		if chunk.IsLast {
+			break
+		}
+	}
+
+	fileID := uuid.New().String()
+
+	err := db_service.StoreFile(stream.Context(), fileID, fileBuffer)
+	if err != nil {
+		return status.Errorf(codes.Internal, "Error storing file: %v", err)
+	}
+
+	response := &psm.FileTransferResponse{
+		Success: true,
+		Message: "File received and stored successfully",
+		FileId:  fileID,
+	}
+
+	return stream.SendAndClose(response)
 }

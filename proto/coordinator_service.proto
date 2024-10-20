@@ -22,8 +22,21 @@ message SubmitTaskResponse {
     bool success = 3;
 }
 
+message SubmitFIleRequest {
+    string task_id = 1;
+    string data = 2;
+    string fileBuffer = 3;
+}
+
+message SubmitFileResponse {
+    string task_id = 1;
+    string message = 2;
+    bool success = 3;
+}
+
 service WorkerService {
     rpc SubmitTask (SubmitTaskRequest) returns (SubmitTaskResponse) {}
+    rpc SubmitFile (stream SubmitFileRequest) returns (SubmitFileResponse) {}
 }
 
 message SendPulseRequest {

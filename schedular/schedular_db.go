@@ -61,3 +61,19 @@ func (Db *PrismaLaptopService) GetTaskStatus(ctx context.Context, id string) (*d
 
 	return data, nil
 }
+
+func (Db *PrismaLaptopService) StoreFile(ctx context.Context, fileID string, fileBuffer []byte) error {
+
+	_, err := Db.Db.Tasks.CreateOne(
+		db.Tasks.Command.Set("File"),
+		db.Tasks.ScheduledAt.Set(time.Now()),
+		db.Tasks.FileContent.Set(fileBuffer),
+		db.Tasks.FileID.Set(fileID),
+	).Exec(ctx)
+
+	if err != nil {
+		return status.Error(codes.Internal, "Failed to store file")
+	}
+
+	return nil
+}

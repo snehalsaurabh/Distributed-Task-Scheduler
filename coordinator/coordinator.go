@@ -170,14 +170,24 @@ func (c *CoordinatorService) scanDatabaseForTasks() {
 		return
 	}
 
+	fmt.Printf("Tasks found: %x\n", tasks)
+
 	for _, task := range tasks {
 		// log.Print("Task found: ", task.ID)
 		formattedTask := &psm.SubmitTaskRequest{TaskId: task.ID, Data: task.Command}
 		formattedFile := &psm.SubmitFileRequest{TaskId: task.ID, FileBuffer: task.FileContent}
 
+		log.Printf("Found a coordinator task  from database ")
+		log.Printf("Task Command: %x", task.FileContent)
+
 		if task.Command == "File" {
-			fmt.Printf("File Task Found")
+			log.Printf("File Task Found")
 			c.submitFileToWorker(ctx, formattedFile)
+
+			if err := db_client.UpdatePickedTask(ctx, task.ID); err != nil {
+				log.Print("Failed to update picked task: ", err)
+				continue
+			}
 		} else {
 			if err := c.submitTaskToWorker(ctx, formattedTask); err != nil {
 				log.Print("Failed to submit task: ", err)

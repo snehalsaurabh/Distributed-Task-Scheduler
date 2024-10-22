@@ -23,6 +23,7 @@ func (d *PrismaCoordinatorService) fetchQualifiedData(ctx context.Context) ([]st
 	Command     string
 	FileContent []byte
 }, error) {
+
 	var tasks []struct {
 		ID          string
 		Command     string
@@ -30,12 +31,12 @@ func (d *PrismaCoordinatorService) fetchQualifiedData(ctx context.Context) ([]st
 	}
 
 	query := `
-        SELECT id, command , fileContent
-        FROM "Tasks" 
-        WHERE "scheduledAt" < (NOW() + INTERVAL '30 seconds') 
-        AND "pickedAt" IS NULL 
-        ORDER BY "scheduledAt" 
-        FOR UPDATE SKIP LOCKED
+        SELECT id, command , "fileContent"
+		FROM "Tasks"
+		WHERE "scheduledAt" < (NOW() + INTERVAL '30 seconds')
+		AND "pickedAt" IS NULL
+		ORDER BY "scheduledAt"
+		FOR UPDATE SKIP LOCKED
     `
 
 	err := d.Db.Prisma.QueryRaw(query).Exec(ctx, &tasks)

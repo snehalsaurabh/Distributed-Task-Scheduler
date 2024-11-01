@@ -119,19 +119,3 @@ DATABASE_URL="postgresql://postgres:admin@postgres:5432/postgres?schema=public"
 
 COORDINATOR_ADDRESS="http://localhost:8081"
 ```
-
-### Worker Health Checks
-
-Each worker implements a comprehensive health check system:
-
-```go
-// Example health check endpoint
-func (w *Worker) HealthCheck() *HealthStatus {
-    return &HealthStatus{
-        CoordinatorConnection: w.checkCoordinatorConnection(),
-        TaskProcessingStatus: w.getTaskProcessingStatus(),
-        DatabaseConnection: w.checkDatabaseConnection(),
-        ServerStatus: w.checkServerStatus(),
-    }
-}
-```

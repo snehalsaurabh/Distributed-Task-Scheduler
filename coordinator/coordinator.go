@@ -170,18 +170,11 @@ func (c *CoordinatorService) scanDatabaseForTasks() {
 		return
 	}
 
-	fmt.Printf("Tasks found: %x\n", tasks)
-
 	for _, task := range tasks {
-		// log.Print("Task found: ", task.ID)
 		formattedTask := &psm.SubmitTaskRequest{TaskId: task.ID, Data: task.Command}
 		formattedFile := &psm.SubmitFileRequest{TaskId: task.ID, FileBuffer: task.FileContent}
 
-		log.Printf("Found a coordinator task  from database ")
-		log.Printf("Task Command: %x", task.FileContent)
-
 		if task.Command == "File" {
-			log.Printf("File Task Found")
 			c.submitFileToWorker(ctx, formattedFile)
 
 			if err := db_client.UpdatePickedTask(ctx, task.ID); err != nil {
@@ -203,7 +196,7 @@ func (c *CoordinatorService) scanDatabaseForTasks() {
 }
 
 func (c *CoordinatorService) submitFileToWorker(ctx context.Context, file *psm.SubmitFileRequest) error {
-	// Get the next available worker
+
 	worker := c.getNextWorker()
 	if worker == nil {
 		return errors.New("no worker available")
@@ -211,28 +204,22 @@ func (c *CoordinatorService) submitFileToWorker(ctx context.Context, file *psm.S
 
 	log.Printf("Submitting file for task %s to worker %d", file.TaskId, worker.WorkerId)
 
-	// Open the streaming RPC connection to the worker
 	stream, err := worker.WorkerClient.SubmitFile(ctx)
 	if err != nil {
 		log.Printf("Failed to open file stream to worker: %v", err)
 		return err
 	}
 
-	// Send the entire file buffer directly (no need for chunking if it's already in memory)
 	req := &psm.SubmitFileRequest{
 		TaskId:     file.TaskId,
-		FileBuffer: file.FileBuffer, // Assuming file.FileBuffer is the raw byte data
+		FileBuffer: file.FileBuffer,
 	}
 
-	// Send the file to the worker
 	if err := stream.Send(req); err != nil {
 		log.Printf("Failed to send file buffer: %v", err)
 		return err
 	}
 
-	log.Printf("File buffer sent for task %s", file.TaskId)
-
-	// Close the stream and get the final response
 	res, err := stream.CloseAndRecv()
 	if err != nil {
 		log.Printf("Failed to receive response from worker: %v", err)
@@ -254,7 +241,6 @@ func (c *CoordinatorService) submitTaskToWorker(ctx context.Context, task *psm.S
 
 	_, err := worker.WorkerClient.SubmitTask(ctx, task)
 	if err != nil {
-		// log.Printf("Failed to submit task to worker IDK Why: %v", err)
 		return err
 	}
 	return nil

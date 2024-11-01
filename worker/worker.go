@@ -159,10 +159,7 @@ func (w *WorkerService) SubmitFile(stream psm.WorkerService_SubmitFileServer) er
 			return err
 		}
 
-		log.Printf("Worker : %s saved file for task %s to %s", string(w.id), req.TaskId, fileName)
-
 		w.processFile(fileName, req.TaskId)
-		fmt.Printf("The file recieved by worker :-  %s", req.FileBuffer)
 
 		go w.updateFileStatus(req, psm.TaskStatus_COMPLETED)
 	}
@@ -196,19 +193,16 @@ func (w *WorkerService) processFile(fileName string, taskID string) {
 		}
 	}()
 
-	// Example: If the file is a script or executable, you can run it
-	cmd := exec.Command("python3", fileName) // Modify as needed, e.g., "python" for Python files
+	cmd := exec.Command("python3", fileName)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	// Run the file and capture the output
 	if err := cmd.Run(); err != nil {
 		log.Printf("Worker : %s failed to execute file for task %s: %v", string(w.id), taskID, err)
 	} else {
 		log.Printf("Worker : %s successfully processed file task %s", string(w.id), taskID)
 	}
 
-	// Update task status to "COMPLETED" if the file was successfully processed
 	w.updateStatus(&psm.SubmitTaskRequest{TaskId: taskID}, psm.TaskStatus_COMPLETED)
 }
 
